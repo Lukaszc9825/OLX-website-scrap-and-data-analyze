@@ -1,4 +1,4 @@
-# auction-website-scrap
+# Webscrap script to work on data from websites
 
 ## Work in progres. 
-I want to make a script to analyze types of announcements and what is the probability of scam.
+Script scrap data from 2 websites (OLX and Otodom). I want to use this data to anlyze and maybe ML tasks
