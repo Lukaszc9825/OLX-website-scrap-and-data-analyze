@@ -17,7 +17,7 @@ class Scraper(object):
 		self.apartments_list = []
 
 		Scraper.separate(self, self.soup)
-		Scraper.all_pages(self)
+		Scraper.all_pages(self,self.what)
 
 	
 	# Separate the apartments from each other 
@@ -40,8 +40,10 @@ class Scraper(object):
 
 	  		if 'mieszkanie na wynajem:' == temp.find('span').get_text().lower().strip():
 	  			self.apartment_info['for rent/sale'] = 'rent'
+	  			self.what = 0
 	  		else:
 	  			self.apartment_info['for rent/sale'] = 'sale'
+	  			self.what = 1
 	  
 	  		self.apartment_info['localization'] = temp.get_text().split(':')[1].strip()
 	  		self.apartment_info['price'] = ap.find(class_ = 'offer-item-price').get_text().replace('/mc', '').strip()
@@ -64,9 +66,15 @@ class Scraper(object):
 
 	
 	#make "separate" function fo all off the pages. (without first because of different url)
-	def all_pages(self):
+	def all_pages(self, what):
 		for i in range(1, Scraper.get_number_of_pages(self)):
-			self.url2 = 'https://www.otodom.pl/wynajem/mieszkanie/?page=' + str(i+1)
+			
+			if what == 0:
+				self.url2 = 'https://www.otodom.pl/wynajem/mieszkanie/?page=' + str(i+1)
+
+			elif what == 1:
+				self.url2 = 'https://www.otodom.pl/sprzedaz/mieszkanie/?page=' + str(i+1)
+			
 			self.page2 = requests.get(self.url2, headers=self.headers)
 			self.soup2 = bs(self.page2.content, 'html.parser')
 			Scraper.separate(self, self.soup2)
@@ -94,11 +102,13 @@ class Json_file():
 
 if __name__ == '__main__':
 
-	url = 'https://www.otodom.pl/wynajem/mieszkanie/'
-
+	url1 = 'https://www.otodom.pl/wynajem/mieszkanie/'
+	url2 = 'https://www.otodom.pl/sprzedaz/mieszkanie/'
 	headers = {"User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
 	(KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
 
-	scraper = Scraper(url, headers)
+	scraper1 = Scraper(url1, headers)
+	scraper2 = Scraper(url2, headers)
 	j = Json_file()
-	j.save("otodom_data", scraper.apartments_list)
+	j.save("otodom_rent_data", scraper1.apartments_list)
+	j.save("otodom_sale_data", scraper2.apartments_list)
