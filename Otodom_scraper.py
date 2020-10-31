@@ -97,18 +97,3 @@ class Json_file():
 	def load(self, title):
 		with open(title, encoding = 'utf-8') as f:
 			return json.load(f)
-
-
-
-# if __name__ == '__main__':
-
-# 	url1 = 'https://www.otodom.pl/wynajem/mieszkanie/'
-# 	url2 = 'https://www.otodom.pl/sprzedaz/mieszkanie/'
-# 	headers = {"User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
-# 	(KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
-
-# 	scraper1 = Scraper(url1, headers)
-# 	scraper2 = Scraper(url2, headers)
-# 	j = Json_file()
-# 	j.save("otodom_rent_data", scraper1.apartments_list)
-# 	j.save("otodom_sale_data", scraper2.apartments_list)
