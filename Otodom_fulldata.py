@@ -21,8 +21,9 @@ def add_column(*args):
 		arg['localization'] = arg_temp['localization'].str.split(',',expand = True)[0]
 		arg['localization 1'] = arg_temp['localization'].str.split(',',expand = True)[1]
 		arg['localization 2'] = arg_temp['localization'].str.split(',',expand = True)[2]
-
-
+		arg[arg['price'] != 'Zapytajocenę']
+		arg['district'] = add_district(arg)
+		
 def find_data(*args):
 	for arg in args:
 
@@ -77,6 +78,34 @@ def find_data(*args):
 					arg.at[index,'number of floors'] = temp.get('Liczba pięter')
 				elif 'Liczba pięter' in temp == False:
 					arg.at[index,'number of floors'] = 0
+
+def add_district(df):
+	temp =[]
+	for city in df['localization']:
+
+		if districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'miasto')].empty ==  False:
+			d = districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'miasto')]
+			temp.append(d.iloc[0]['Powiat (miasto na prawach powiatu)'])
+		
+		elif districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'wieś')].empty ==  False:
+			d = districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'wieś')]
+			temp.append(d.iloc[0]['Powiat (miasto na prawach powiatu)'])
+
+		elif districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'osada')].empty ==  False:
+			d = districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'osada')]
+			temp.append(d.iloc[0]['Powiat (miasto na prawach powiatu)'])
+
+		elif districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'kolonia')].empty ==  False:
+			d = districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'kolonia')]
+			temp.append(d.iloc[0]['Powiat (miasto na prawach powiatu)'])
+
+		elif city == 'Stargard':
+			temp.append('stargardzki')
+
+		else:
+			print(city)
+
+	return temp
 
 
 if __name__ == '__main__':
