@@ -7,6 +7,10 @@ import pandas as pd
 df1 = pd.read_json('otodom_rent_data')
 df2 = pd.read_json('otodom_sale_data')
 
+districts = pd.read_excel('districts.xlsx')
+districts = districts.drop(columns = ['Gmina', 'Województwo',
+ 'Identyfikator miejscowości z krajowego rejestru urzędowego podziału terytorialnego kraju TERYT','Dopełniacz','Przymiotnik'])
+
 def add_column(*args):
 	for arg in args:
 		arg_temp = arg.copy()
@@ -21,7 +25,6 @@ def add_column(*args):
 		arg['localization'] = arg_temp['localization'].str.split(',',expand = True)[0]
 		arg['localization 1'] = arg_temp['localization'].str.split(',',expand = True)[1]
 		arg['localization 2'] = arg_temp['localization'].str.split(',',expand = True)[2]
-		arg[arg['price'] != 'Zapytajocenę']
 		arg['district'] = add_district(arg)
 		
 def find_data(*args):
@@ -85,22 +88,22 @@ def add_district(df):
 
 		if districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'miasto')].empty ==  False:
 			d = districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'miasto')]
-			temp.append(d.iloc[0]['Powiat (miasto na prawach powiatu)'])
+			temp.append('powiat ' + d.iloc[0]['Powiat (miasto na prawach powiatu)'])
 		
 		elif districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'wieś')].empty ==  False:
 			d = districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'wieś')]
-			temp.append(d.iloc[0]['Powiat (miasto na prawach powiatu)'])
+			temp.append('powiat ' + d.iloc[0]['Powiat (miasto na prawach powiatu)'])
 
 		elif districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'osada')].empty ==  False:
 			d = districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'osada')]
-			temp.append(d.iloc[0]['Powiat (miasto na prawach powiatu)'])
+			temp.append('powiat ' + d.iloc[0]['Powiat (miasto na prawach powiatu)'])
 
 		elif districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'kolonia')].empty ==  False:
 			d = districts.loc[(districts['Nazwa miejscowości '] == city) & (districts['Rodzaj'] == 'kolonia')]
-			temp.append(d.iloc[0]['Powiat (miasto na prawach powiatu)'])
+			temp.append('powiat ' + d.iloc[0]['Powiat (miasto na prawach powiatu)'])
 
 		elif city == 'Stargard':
-			temp.append('stargardzki')
+			temp.append('powiat stargardzki')
 
 		else:
 			print(city)
