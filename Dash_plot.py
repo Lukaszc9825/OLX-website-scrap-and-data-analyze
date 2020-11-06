@@ -7,19 +7,21 @@ from dash.dependencies import Input, Output
 import json
 from urllib.request import urlopen
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-app = dash.Dash(__name__, external_stylesheets = external_stylesheets)
+app = dash.Dash(__name__)
+
+token = 'pk.eyJ1IjoibGNpZXNsdWsiLCJhIjoiY2toNnM3MG9lMDBhNDJydDM4a3EwYnEyYiJ9.-6g_IQr9CFIe_Z7UtG_tkw'
 
 
 # load geojson to use in Choropleth map
 with urlopen('https://raw.githubusercontent.com/ppatrzyk/polska-geojson/master/powiaty/powiaty-max.geojson') as response:
-    poland = json.load(response)    
+    poland = json.load(response)
 
 colors = {
-    'background': '#111111',
-    'text': '#7FDBFF'
+    'background': '#3D3A3E',
+    'text': '#0ABAB5'
 }
+
 #------------------------------------------------------------------------------------
 #add new columns
 df = pd.read_json('otodom_full_data', orient = 'split')
@@ -48,22 +50,39 @@ df3 = df3.reset_index()
 
 #------------------------------------------------------------------------------------
 # Page html
-app.layout = html.Div(style = {'backgroundColor': colors['background']},
-	children = [html.H1('Otodom data analyze', style = {'text-align': 'center', 'color':colors['text']}),
-	dcc.Dropdown(id = 'rent/sale',
+app.layout = html.Div([
+	
+	html.Div(
+		
+		html.H1('Otodom data analyze'),
+		className = 'banner'
+	),
+	
+	dcc.Dropdown(
+
+		id = 'rent/sale',
 		options = [
 			{'label': 'rent', 'value': 'rent'},
 			{'label': 'sale', 'value': 'sale'}],
 		multi = False,
 		value = 'sale',
-		style = {'width': '40%'}),
+		style = {'width': '40%','backgroundColor':colors['background'],'color': colors['text'] }
 
-	html.Div(
-		children = dcc.Graph(id = 'map', style = {"display": "block", "margin-left": "auto","margin-right": "auto"}),
-		className = 'six columns'
+	),
+	html.Div([
+		html.Div(
+
+			dcc.Graph(id = 'map'),
+			className = 'seven columns'
 		),
 
-	dcc.Graph(id = 'graph'),
+		html.Div(
+
+			dcc.Graph(id = 'graph'),
+			className = 'five columns'
+		)],
+		className = 'row'
+	),
 
 	dcc.Graph(id = 'count_city')
 
@@ -95,32 +114,47 @@ def update_graph(option_slctd):
 	fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
 	fig.update_layout(uniformtext_minsize=4, uniformtext_mode='hide')
 
+	fig.update_layout(
+		plot_bgcolor=colors['background'],
+		paper_bgcolor=colors['background'],
+		font_color=colors['text']
+	)
 
 	fig2 = px.bar(dff2, x = 'localization', y = 'counts',text = 'counts', labels ={'counts': 'number of apartments'})
 	fig2.update_traces(textposition='outside')
 	fig2.update_layout(uniformtext_minsize=4, uniformtext_mode='hide')
+
+	fig2.update_layout(
+		plot_bgcolor=colors['background'],
+		paper_bgcolor=colors['background'],
+		font_color=colors['text']
+	)
 	#------------------------------------------------------------------------------------
 
 
 	#------------------------------------------------------------------------------------
 	# Map graph
-	fig3 = px.choropleth_mapbox(dff3,
+	fig3 = px.choropleth_mapbox(
+		dff3,
 		geojson = poland,
 		locations = 'district',
 		color = 'counts',
 		featureidkey='properties.nazwa',
-		mapbox_style="carto-positron",
-		color_continuous_scale="Viridis",
+		color_continuous_scale='Cividis',
 		range_color = (0,round(dff3['counts'].max(),-2)),
 		zoom=6,
 		center = {"lat": 52.1127, "lon": 19.2119},
 		labels = {'counts': 'number of apartments'}
-		)
+	)
 
-	fig3.update_layout(width =1100, height = 900, margin = {'r':20, 'l':20, 't':20, 'b':20},
-		plot_bgcolor = colors['background'],paper_bgcolor = colors['background'], font_color = colors['text'])
+	fig3.update_layout(mapbox_accesstoken=token,
+		mapbox_style='mapbox://styles/lciesluk/ckh6savza1jn719qe0y5lzd4i',
+		width =1100, height = 900, margin = {'r':20, 'l':20, 't':20, 'b':20},
+	    plot_bgcolor=colors['background'],
+    	paper_bgcolor=colors['background'],
+    	font_color=colors['text']
+	)
 	
-
 	return fig, fig2, fig3
 
 if __name__ == '__main__':
