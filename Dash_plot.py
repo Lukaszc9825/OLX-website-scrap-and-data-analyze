@@ -12,11 +12,17 @@ app = dash.Dash(__name__)
 
 token = 'pk.eyJ1IjoibGNpZXNsdWsiLCJhIjoiY2toNnM3MG9lMDBhNDJydDM4a3EwYnEyYiJ9.-6g_IQr9CFIe_Z7UtG_tkw'
 
+pop = pd.read_excel('area_population.xlsx')
+pop = pop.drop(['Miasto','Województwo','Gęstość zaludnienia [osoby/km²] (01.01.2020)'], axis =1)
+pop = pop.rename(columns = {'Powiat':'district','Powierzchnia [ha] (01.01.2020)': 'area of district','Liczba ludności (01.01.2020)':'population' })
+pop['district'] = 'powiat '+ pop['district']
+
 
 # load geojson to use in Choropleth map
-with urlopen('https://raw.githubusercontent.com/ppatrzyk/polska-geojson/master/powiaty/powiaty-max.geojson') as response:
-    poland = json.load(response)
+with open('poland', encoding = 'utf-8') as f:
+	poland = json.load(f)
 
+# dict with colors of background and text
 colors = {
     'background': '#3D3A3E',
     'text': '#0ABAB5'
@@ -34,12 +40,14 @@ df['counts'] = 0
 #------------------------------------------------------------------------------------
 
 
+
 #------------------------------------------------------------------------------------
 #Group dataframe to use in graphs
-df1 = df.groupby(['localization','for rent/sale'])['price/m'].mean()
+df1 = df.groupby(['localization','for rent/sale','district']).agg({'localization':'count','price/m':'mean'})\
+	.rename(columns={'localization':'count','price/m':'mean price/m'})
 df1 = df1.reset_index()
-
-df2 = df.groupby(['localization', 'for rent/sale'])['counts'].count()
+print(df1)
+df2 = df.groupby(['district', 'for rent/sale'])['counts'].count()
 df2 = df2.reset_index()
 
 df3 = df.groupby(['district', 'for rent/sale'])['counts'].count()
@@ -73,13 +81,13 @@ app.layout = html.Div([
 		html.Div(
 
 			dcc.Graph(id = 'map'),
-			className = 'seven columns'
+			className = 'six columns'
 		),
 
 		html.Div(
 
 			dcc.Graph(id = 'graph'),
-			className = 'five columns'
+			className = 'six columns'
 		)],
 		className = 'row'
 	),
@@ -109,18 +117,21 @@ def update_graph(option_slctd):
 	dff3 = dff3[dff3['for rent/sale'] == option_slctd]
 
 	#------------------------------------------------------------------------------------
-	# Bar Graphs
-	fig = px.bar(dff, x = 'localization', y = 'price/m', text = 'price/m', labels={'price/m':'price/m [PLN]'})
-	fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
-	fig.update_layout(uniformtext_minsize=4, uniformtext_mode='hide')
+	# scatter graph
+	fig = px.scatter(dff, x = 'mean price/m', y = 'count', color = 'district',
+		hover_name = 'localization',
+		labels ={'count': 'number of apartments'})
 
 	fig.update_layout(
+		height = 900,
 		plot_bgcolor=colors['background'],
 		paper_bgcolor=colors['background'],
 		font_color=colors['text']
 	)
+	#------------------------------------------------------------------------------------
 
-	fig2 = px.bar(dff2, x = 'localization', y = 'counts',text = 'counts', labels ={'counts': 'number of apartments'})
+
+	fig2 = px.bar(dff2, x = 'district', y = 'counts',text = 'counts', labels ={'counts': 'number of apartments'})
 	fig2.update_traces(textposition='outside')
 	fig2.update_layout(uniformtext_minsize=4, uniformtext_mode='hide')
 
@@ -149,12 +160,13 @@ def update_graph(option_slctd):
 
 	fig3.update_layout(mapbox_accesstoken=token,
 		mapbox_style='mapbox://styles/lciesluk/ckh6savza1jn719qe0y5lzd4i',
-		width =1100, height = 900, margin = {'r':20, 'l':20, 't':20, 'b':20},
+		height = 900, margin = {'r':0, 'l':20, 't':20, 'b':20},
 	    plot_bgcolor=colors['background'],
     	paper_bgcolor=colors['background'],
     	font_color=colors['text']
 	)
-	
+	#------------------------------------------------------------------------------------
+
 	return fig, fig2, fig3
 
 if __name__ == '__main__':
