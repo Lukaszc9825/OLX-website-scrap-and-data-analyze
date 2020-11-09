@@ -9,14 +9,14 @@ from urllib.request import urlopen
 
 
 app = dash.Dash(__name__)
+pd.set_option('display.max_columns', None, 'display.max_rows', None)
 
 token = 'pk.eyJ1IjoibGNpZXNsdWsiLCJhIjoiY2toNnM3MG9lMDBhNDJydDM4a3EwYnEyYiJ9.-6g_IQr9CFIe_Z7UtG_tkw'
 
 pop = pd.read_excel('area_population.xlsx')
 pop = pop.drop(['Miasto','Województwo','Gęstość zaludnienia [osoby/km²] (01.01.2020)'], axis =1)
 pop = pop.rename(columns = {'Powiat':'district','Powierzchnia [ha] (01.01.2020)': 'area of district','Liczba ludności (01.01.2020)':'population' })
-pop['district'] = 'powiat '+ pop['district']
-
+pop['district'] = 'powiat '+ pop['district'].str.replace('m.st.','').str.strip().str.split('[',expand=True)[0]
 
 # load geojson to use in Choropleth map
 with open('poland', encoding = 'utf-8') as f:
@@ -32,21 +32,35 @@ colors = {
 #add new columns
 df = pd.read_json('otodom_full_data', orient = 'split')
 df = df[df['price'] != 'Zapytajocenę']
+df = df.reset_index()
 df['price'] = df.price.astype(float)
 df['area'] = df.area.astype(float)
 df['price/m'] = df['price']/df['area']
 df['counts'] = 0
+df['population'] = '0'
+df['area of district'] = '0'
 
 #------------------------------------------------------------------------------------
+
+for i, dis in enumerate(df['district']):
+
+	if pop[pop['district'] == dis].empty == False:
+		temp = pop[pop['district'] == dis]
+		temp = temp.groupby(['district']).agg({'population': 'sum', 'area of district': 'sum'})
+		temp = temp.reset_index()
+		df.at[i,'population'] = temp.iloc[0]['population']
+		df.at[i,'area of district'] = temp.iloc[0]['area of district']
+
+# print(df.index[df['powiat aleksandrowski']].tolist())
 
 
 
 #------------------------------------------------------------------------------------
 #Group dataframe to use in graphs
-df1 = df.groupby(['localization','for rent/sale','district']).agg({'localization':'count','price/m':'mean'})\
-	.rename(columns={'localization':'count','price/m':'mean price/m'})
+df1 = df.groupby(['for rent/sale','district','population','area of district']).agg({'district':'count','price/m':'mean'})\
+	.rename(columns={'district':'count','price/m':'mean price/m'})
 df1 = df1.reset_index()
-print(df1)
+
 df2 = df.groupby(['district', 'for rent/sale'])['counts'].count()
 df2 = df2.reset_index()
 
@@ -90,9 +104,7 @@ app.layout = html.Div([
 			className = 'six columns'
 		)],
 		className = 'row'
-	),
-
-	dcc.Graph(id = 'count_city')
+	)
 
 ])
 #------------------------------------------------------------------------------------
@@ -100,7 +112,6 @@ app.layout = html.Div([
 
 @app.callback(
     [Output(component_id='graph', component_property='figure'),
-    Output(component_id = 'count_city', component_property = 'figure'),
     Output(component_id = 'map', component_property = 'figure')],
     [Input(component_id='rent/sale', component_property='value')])
 
@@ -110,32 +121,20 @@ def update_graph(option_slctd):
 	dff = df1.copy()
 	dff = dff[dff['for rent/sale'] == option_slctd]
 
-	dff2 = df2.copy()
-	dff2 = dff2[dff2['for rent/sale'] == option_slctd]
-
 	dff3 = df3.copy()
 	dff3 = dff3[dff3['for rent/sale'] == option_slctd]
 
 	#------------------------------------------------------------------------------------
 	# scatter graph
-	fig = px.scatter(dff, x = 'mean price/m', y = 'count', color = 'district',
-		hover_name = 'localization',
+	fig = px.scatter(dff, x = 'count', y = 'mean price/m', color = 'population',
+		log_x = True,
+		log_y = True,
+		size = 'area of district',
+		hover_name = 'district',
 		labels ={'count': 'number of apartments'})
 
 	fig.update_layout(
 		height = 900,
-		plot_bgcolor=colors['background'],
-		paper_bgcolor=colors['background'],
-		font_color=colors['text']
-	)
-	#------------------------------------------------------------------------------------
-
-
-	fig2 = px.bar(dff2, x = 'district', y = 'counts',text = 'counts', labels ={'counts': 'number of apartments'})
-	fig2.update_traces(textposition='outside')
-	fig2.update_layout(uniformtext_minsize=4, uniformtext_mode='hide')
-
-	fig2.update_layout(
 		plot_bgcolor=colors['background'],
 		paper_bgcolor=colors['background'],
 		font_color=colors['text']
@@ -151,8 +150,8 @@ def update_graph(option_slctd):
 		locations = 'district',
 		color = 'counts',
 		featureidkey='properties.nazwa',
-		color_continuous_scale='Cividis',
-		range_color = (0,round(dff3['counts'].max(),-2)),
+		color_continuous_scale='Plasma',
+		# range_color = (0,round(dff3['counts'].max(),-2)),
 		zoom=6,
 		center = {"lat": 52.1127, "lon": 19.2119},
 		labels = {'counts': 'number of apartments'}
@@ -167,7 +166,7 @@ def update_graph(option_slctd):
 	)
 	#------------------------------------------------------------------------------------
 
-	return fig, fig2, fig3
+	return fig, fig3
 
 if __name__ == '__main__':
 	app.run_server(debug = True)
