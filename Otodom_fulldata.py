@@ -1,7 +1,8 @@
+import grequests
+import json
+from bs4 import BeautifulSoup as bs
 from Otodom_scraper import Scraper
 from Otodom_scraper import Json_file
-from bs4 import BeautifulSoup as bs
-import requests
 import pandas as pd
 
 df1 = pd.read_json('otodom_rent_data')
@@ -26,13 +27,17 @@ def add_column(*args):
 		arg['localization 1'] = arg_temp['localization'].str.split(',',expand = True)[1]
 		arg['localization 2'] = arg_temp['localization'].str.split(',',expand = True)[2]
 		arg['district'] = add_district(arg)
+		arg = arg.reset_index()
 		
 def find_data(*args):
 	for arg in args:
 
-		for index,href in enumerate(arg['href']):
-			page = requests.get(href, headers = headers)
-			soup = bs(page.content, 'html.parser')
+		reqs = [grequests.get(url,headers=headers) for url in arg['href']]
+		resp = grequests.map(reqs, size =10)
+
+		for index, r in enumerate(resp):
+			print(r)
+			soup = bs(r.content, 'html.parser')
 			mess = soup.find_all(class_ ='section-overview')
 			for m in mess:
 				data = m.find('ul')
@@ -106,15 +111,16 @@ def add_district(df):
 			temp.append('powiat stargardzki')
 
 		else:
-			print(city)
+			d = districts.loc[(districts['Nazwa miejscowości '] == city)]
+			temp.append('powiat ' + d.iloc[0]['Powiat (miasto na prawach powiatu)'])
 
 	return temp
 
 
 if __name__ == '__main__':
 
-	url1 = 'https://www.otodom.pl/wynajem/mieszkanie/'
-	url2 = 'https://www.otodom.pl/sprzedaz/mieszkanie/'
+	url1 = 'https://www.otodom.pl/wynajem/'
+	url2 = 'https://www.otodom.pl/sprzedaz/'
 	headers = {"User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
 	(KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
 
