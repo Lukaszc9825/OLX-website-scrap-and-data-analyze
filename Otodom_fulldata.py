@@ -15,12 +15,12 @@ districts = districts.drop(columns = ['Gmina', 'Województwo',
 def add_column(*args):
 	for arg in args:
 		arg_temp = arg.copy()
-		arg['Rent'] = 'no data'
-		arg['Deposit'] = 'no data'
-		arg['Number of rooms'] = 'no data'
-		arg['built in'] = 'no data'
-		arg['floor'] = 'no data'
-		arg['number of floors'] = 'no data'
+		# arg['Rent'] = 'no data'
+		# arg['Deposit'] = 'no data'
+		# arg['Number of rooms'] = 'no data'
+		# arg['built in'] = 'no data'
+		# arg['floor'] = 'no data'
+		# arg['number of floors'] = 'no data'
 		arg['price'] = arg['price'].str.replace('zł', '').str.replace(',', '.').str.replace(' ','').str.replace('~','')
 		arg['area'] = arg['area'].str.replace('m²', '').str.replace(',','.').str.replace(' ','')
 		arg['localization'] = arg_temp['localization'].str.split(',',expand = True)[0]
@@ -119,18 +119,18 @@ def add_district(df):
 
 if __name__ == '__main__':
 
-	url1 = 'https://www.otodom.pl/wynajem/'
-	url2 = 'https://www.otodom.pl/sprzedaz/'
-	headers = {"User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
-	(KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
+	# url1 = 'https://www.otodom.pl/wynajem/'
+	# url2 = 'https://www.otodom.pl/sprzedaz/'
+	# headers = {"User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
+	# (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
 
-	scraper1 = Scraper(url1, headers)
-	scraper2 = Scraper(url2, headers)
-	j = Json_file()
-	j.save("otodom_rent_data", scraper1.apartments_list)
-	j.save("otodom_sale_data", scraper2.apartments_list)
+	# scraper1 = Scraper(url1, headers)
+	# scraper2 = Scraper(url2, headers)
+	# j = Json_file()
+	# j.save("otodom_rent_data", scraper1.apartments_list)
+	# j.save("otodom_sale_data", scraper2.apartments_list)
 
 	add_column(df1,df2)
-	find_data(df1,df2)
+	# find_data(df1,df2)
 	df3 = pd.concat([df1, df2], ignore_index=True)
 	df3.to_json('otodom_full_data', orient= 'split')

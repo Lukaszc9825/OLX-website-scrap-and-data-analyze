@@ -151,8 +151,8 @@ class Scraper(object):
 
 
 	def make_all_req(self):
-		for r in self.resp:
-		
+		for i, r in enumerate(self.resp):
+			print(i)
 			soup = bs(r.content, 'html.parser')
 			Scraper.separate(self,soup)
 
@@ -179,11 +179,16 @@ class Json_file():
 
 if __name__ == '__main__':
 
+	url1 = 'https://www.otodom.pl/wynajem/mieszkanie/'
 	url2 = 'https://www.otodom.pl/sprzedaz/mieszkanie/'
 	headers = {"User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
 	(KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
+	
+	j = Json_file()
+
+	# scraper1 = Scraper(url1, headers)
+	# j.save("otodom_rent_data", scraper1.apartments_list)
 
 	scraper2 = Scraper(url2, headers)
-	j = Json_file()
 
 	j.save("otodom_sale_data", scraper2.apartments_list)
