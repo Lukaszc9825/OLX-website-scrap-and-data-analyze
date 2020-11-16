@@ -13,10 +13,15 @@ pd.set_option('display.max_columns', None, 'display.max_rows', None)
 
 token = 'pk.eyJ1IjoibGNpZXNsdWsiLCJhIjoiY2toNnM3MG9lMDBhNDJydDM4a3EwYnEyYiJ9.-6g_IQr9CFIe_Z7UtG_tkw'
 
-pop = pd.read_excel('area_population.xlsx')
-pop = pop.drop(['Miasto','Województwo','Gęstość zaludnienia [osoby/km²] (01.01.2020)'], axis =1)
-pop = pop.rename(columns = {'Powiat':'district','Powierzchnia [ha] (01.01.2020)': 'area of district','Liczba ludności (01.01.2020)':'population' })
-pop['district'] = 'powiat '+ pop['district'].str.replace('m.st.','').str.strip().str.split('[',expand=True)[0]
+pop = pd.read_excel('population.xlsx')
+pop = pop.rename(columns = {'Powiat':'district','Powierzchnia [km²]': 'area of district','Liczba ludności [osoby]':'population' })
+
+for i, p in enumerate(pop['district']):
+	if p.split(' ')[0] != 'powiat':
+		
+		pop.at[i,'district'] = 'powiat ' + p
+
+# pop['district'] = 'powiat '+ pop['district'].str.replace('m.st.','').str.strip().str.split('[',expand=True)[0]
 
 # load geojson to use in Choropleth map
 with open('poland', encoding = 'utf-8') as f:
@@ -25,7 +30,7 @@ with open('poland', encoding = 'utf-8') as f:
 # dict with colors of background and text
 colors = {
     'background': '#3D3A3E',
-    'text': '#0ABAB5'
+    'text': '#E1E1E7'
 }
 
 #------------------------------------------------------------------------------------
@@ -61,8 +66,6 @@ df1 = df.groupby(['for rent/sale','district','population','area of district']).a
 	.rename(columns={'district':'count','price/m':'mean price/m'})
 df1 = df1.reset_index()
 
-df2 = df.groupby(['district', 'for rent/sale'])['counts'].count()
-df2 = df2.reset_index()
 
 df3 = df.groupby(['district', 'for rent/sale'])['counts'].count()
 df3 = df3.reset_index()
@@ -74,34 +77,38 @@ print(df1)
 # Page html
 app.layout = html.Div([
 	
-	html.Div(
-		
-		html.H1('Otodom data analyze'),
+	html.Div([	
+		html.H1('Real estate in Poland'),
+		html.H4('Project by Łukasz Cieśluk')],
 		className = 'banner'
+		
 	),
+
+	html.Div(
 	
-	dcc.Dropdown(
+		dcc.Dropdown(
 
-		id = 'rent/sale',
-		options = [
-			{'label': 'rent', 'value': 'rent'},
-			{'label': 'sale', 'value': 'sale'}],
-		multi = False,
-		value = 'sale',
-		style = {'width': '40%','backgroundColor':colors['background'],'color': colors['text'] }
+			id = 'rent/sale',
+			options = [
+				{'label': 'rent', 'value': 'rent'},
+				{'label': 'sale', 'value': 'sale'}],
+			multi = False,
+			value = 'sale',
+			
 
+		),className = 'dropdown'
 	),
 	html.Div([
 		html.Div(
 
 			dcc.Graph(id = 'map'),
-			className = 'six columns'
+			className = 'six columns box'
 		),
 
 		html.Div(
 
 			dcc.Graph(id = 'graph'),
-			className = 'six columns'
+			className = 'six columns box'
 		)],
 		className = 'row'
 	)
@@ -131,7 +138,7 @@ def update_graph(option_slctd):
 		log_y = True,
 		size = 'area of district',
 		hover_name = 'district',
-		labels ={'count': 'number of apartments'})
+		labels ={'count': 'number of apartments', 'area of district': 'area of district [km²]','mean price/m':'mean price/m [PLN]'})
 
 	fig.update_layout(
 		height = 900,
@@ -152,7 +159,7 @@ def update_graph(option_slctd):
 		featureidkey='properties.nazwa',
 		color_continuous_scale='Plasma',
 		# range_color = (0,round(dff3['counts'].max(),-2)),
-		zoom=6,
+		zoom=5,
 		center = {"lat": 52.1127, "lon": 19.2119},
 		labels = {'counts': 'number of apartments'}
 	)
