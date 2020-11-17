@@ -1,20 +1,47 @@
 .box{
  	background-color: #1E1E23;
-	color: #E1E1E7 ;
+	color: #34B2D1 ;
+}
+
+.slider{
+	color: #34B2D1;
+    margin-bottom: 2%;
+	width: 15%;
+}
+
+.left{
+    display: flex;
+    flex-direction: column;
+}
+
+
+.Select-menu-outer {
+  background-color: #1E1E23;
+  color: #34B2D1;
+}
+
+.Select-value{
+  background-color: #1E1E23;
+/*  color: #34B2D1;*/
+}
+#react-select-2--value-item{
+  background-color: #1E1E23;
+  color: #34B2D1;	
+}
+
+.big_box{
+
+  	margin-right: 3%;
+  	margin-left: 3%; 
 }
 
 .banner {
   	text-align: center;
 	margin: 0;
-	background-color: #1E1E23;
-	color: #E1E1E7;
+	color: #34B2D1;
 }
 
 .banner h1{
 	font-size: 6rem;
 }
 
-.dropdown{
-	color: #E1E1E7
-	background-color: #1E1E23;
-}

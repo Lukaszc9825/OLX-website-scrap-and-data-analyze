@@ -9,55 +9,27 @@ from urllib.request import urlopen
 
 
 app = dash.Dash(__name__)
-pd.set_option('display.max_columns', None, 'display.max_rows', None)
 
+
+# pd.set_option('display.max_columns', None, 'display.max_rows', None)
+
+# token to use map in dark mode
 token = 'pk.eyJ1IjoibGNpZXNsdWsiLCJhIjoiY2toNnM3MG9lMDBhNDJydDM4a3EwYnEyYiJ9.-6g_IQr9CFIe_Z7UtG_tkw'
 
-pop = pd.read_excel('population.xlsx')
-pop = pop.rename(columns = {'Powiat':'district','Powierzchnia [km²]': 'area of district','Liczba ludności [osoby]':'population' })
-
-for i, p in enumerate(pop['district']):
-	if p.split(' ')[0] != 'powiat':
-		
-		pop.at[i,'district'] = 'powiat ' + p
-
-# pop['district'] = 'powiat '+ pop['district'].str.replace('m.st.','').str.strip().str.split('[',expand=True)[0]
-
-# load geojson to use in Choropleth map
+# open geojson with poland sistricts coordinates
 with open('poland', encoding = 'utf-8') as f:
 	poland = json.load(f)
 
+
 # dict with colors of background and text
 colors = {
-    'background': '#3D3A3E',
-    'text': '#E1E1E7'
+    'background': '#1E1E23',
+    'text': '#34B2D1'
 }
 
-#------------------------------------------------------------------------------------
-#add new columns
+
+# json file with all sraped data
 df = pd.read_json('otodom_full_data', orient = 'split')
-df = df[df['price'] != 'Zapytajocenę']
-df = df.reset_index()
-df['price'] = df.price.astype(float)
-df['area'] = df.area.astype(float)
-df['price/m'] = df['price']/df['area']
-df['counts'] = 0
-df['population'] = '0'
-df['area of district'] = '0'
-
-#------------------------------------------------------------------------------------
-
-for i, dis in enumerate(df['district']):
-
-	if pop[pop['district'] == dis].empty == False:
-		temp = pop[pop['district'] == dis]
-		temp = temp.groupby(['district']).agg({'population': 'sum', 'area of district': 'sum'})
-		temp = temp.reset_index()
-		df.at[i,'population'] = temp.iloc[0]['population']
-		df.at[i,'area of district'] = temp.iloc[0]['area of district']
-
-# print(df.index[df['powiat aleksandrowski']].tolist())
-
 
 
 #------------------------------------------------------------------------------------
@@ -71,7 +43,7 @@ df3 = df.groupby(['district', 'for rent/sale'])['counts'].count()
 df3 = df3.reset_index()
 
 #------------------------------------------------------------------------------------
-print(df1)
+# print(df1)
 
 #------------------------------------------------------------------------------------
 # Page html
@@ -83,35 +55,40 @@ app.layout = html.Div([
 		className = 'banner'
 		
 	),
-
-	html.Div(
-	
-		dcc.Dropdown(
-
-			id = 'rent/sale',
-			options = [
-				{'label': 'rent', 'value': 'rent'},
-				{'label': 'sale', 'value': 'sale'}],
-			multi = False,
-			value = 'sale',
-			
-
-		),className = 'dropdown'
-	),
 	html.Div([
-		html.Div(
+		html.Div([
 
-			dcc.Graph(id = 'map'),
-			className = 'six columns box'
+			html.P('Choose whether you want to view properties for sale or rent'),
+
+			dcc.Dropdown(
+
+				id = 'rent/sale',
+				options = [
+					{'label': 'rent', 'value': 'rent'},
+					{'label': 'sale', 'value': 'sale'}],
+				multi = False,
+				value = 'sale'
+
+			)],
+			className = 'slider'
 		),
+		html.Div([
+			html.Div([
 
-		html.Div(
+				dcc.Graph(id = 'map'),
+				html.A("Geojson by 'ppatrzyk'" ,href ="https://github.com/ppatrzyk/polska-geojson", target='_blank')],
+				className = 'six columns box left'
+			),
 
-			dcc.Graph(id = 'graph'),
-			className = 'six columns box'
-		)],
-		className = 'row'
-	)
+			html.Div([
+
+				dcc.Graph(id = 'graph'),
+				html.P('Size = area of district')],
+				className = 'six columns box'
+			)],
+			className = 'row'
+		)
+	],className = 'big_box')
 
 ])
 #------------------------------------------------------------------------------------
@@ -159,7 +136,7 @@ def update_graph(option_slctd):
 		featureidkey='properties.nazwa',
 		color_continuous_scale='Plasma',
 		# range_color = (0,round(dff3['counts'].max(),-2)),
-		zoom=5,
+		zoom=5.5,
 		center = {"lat": 52.1127, "lon": 19.2119},
 		labels = {'counts': 'number of apartments'}
 	)

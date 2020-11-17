@@ -28,6 +28,38 @@ def add_column(*args):
 		arg['localization 2'] = arg_temp['localization'].str.split(',',expand = True)[2]
 		arg['district'] = add_district(arg)
 		arg = arg.reset_index()
+
+def add_pop_data(data):
+
+	pop = pd.read_excel('population.xlsx')
+	pop = pop.rename(columns = {'Powiat':'district','Powierzchnia [km²]': 'area of district','Liczba ludności [osoby]':'population' })
+
+	for i, p in enumerate(pop['district']):
+		if p.split(' ')[0] != 'powiat':
+			
+			pop.at[i,'district'] = 'powiat ' + p
+
+	df = data
+	df = df[df['price'] != 'Zapytajocenę']
+	df = df.reset_index()
+	df['price'] = df.price.astype(float)
+	df['area'] = df.area.astype(float)
+	df['price/m'] = df['price']/df['area']
+	df['counts'] = 0
+	df['population'] = 0
+	df['area of district'] = 0
+
+	for i, dis in enumerate(df['district']):
+
+		if pop[pop['district'] == dis].empty == False:
+			temp = pop[pop['district'] == dis]
+			temp = temp.groupby(['district']).agg({'population': 'sum', 'area of district': 'sum'})
+			temp = temp.reset_index()
+			df.at[i,'population'] = temp.iloc[0]['population']
+			df.at[i,'area of district'] = temp.iloc[0]['area of district']
+
+	return df
+
 		
 def find_data(*args):
 	for arg in args:
@@ -133,4 +165,5 @@ if __name__ == '__main__':
 	add_column(df1,df2)
 	# find_data(df1,df2)
 	df3 = pd.concat([df1, df2], ignore_index=True)
+	df3 = add_pop_data(df3)
 	df3.to_json('otodom_full_data', orient= 'split')
