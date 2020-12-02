@@ -55,7 +55,7 @@ class Scraper(object):
 		return self.apartments_list	
 
 	
-
+	# returns a list of urls for every voivodeship	
 	def voivodeship_split(url):
 		voivodeship = ['dolnoslaskie',
 		'kujawsko-pomorskie',
@@ -79,7 +79,7 @@ class Scraper(object):
 		return voivodeship_urls	
 
 	
-
+	# returns a number of annoucments for search area
 	def get_annoucments_number(self, url):
 		
 		page = [grequests.get(url, headers = self.headers )]
@@ -132,6 +132,8 @@ class Scraper(object):
 	# 			if i == 4:
 	# 				last_page = int(page.get_text())
 	# 				return last_page		
+	
+	#returns number off all pages for search area
 	def get_number_of_pages(self, url):
 
 		last = Scraper.get_annoucments_number(self, url)
@@ -139,7 +141,7 @@ class Scraper(object):
 		last = math.ceil(last)
 		return last
 	
-	#make "separate" function fo all off the pages. (without first because of different url)
+	# make "separate" function fo all off the pages. (without first because of different url)
 	def all_pages(self, url):
 
 		for i in range(1, Scraper.get_number_of_pages(self,url) + 1):
@@ -150,6 +152,7 @@ class Scraper(object):
 		return self.urls
 
 
+	# make all requests but asynhro
 	def make_all_req(self):
 		for i, r in enumerate(self.resp):
 			print(i)

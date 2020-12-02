@@ -8,10 +8,13 @@ import pandas as pd
 df1 = pd.read_json('otodom_rent_data')
 df2 = pd.read_json('otodom_sale_data')
 
+#read data with all districts in Poland and delete useless columns
 districts = pd.read_excel('districts.xlsx')
 districts = districts.drop(columns = ['Gmina', 'Województwo',
  'Identyfikator miejscowości z krajowego rejestru urzędowego podziału terytorialnego kraju TERYT','Dopełniacz','Przymiotnik'])
 
+
+# add new columns and clear data from trash characters
 def add_column(*args):
 	for arg in args:
 		arg_temp = arg.copy()
@@ -29,16 +32,20 @@ def add_column(*args):
 		arg['district'] = add_district(arg)
 		arg = arg.reset_index()
 
+
+# add columns with district population and area
 def add_pop_data(data):
 
 	pop = pd.read_excel('population.xlsx')
 	pop = pop.rename(columns = {'Powiat':'district','Powierzchnia [km²]': 'area of district','Liczba ludności [osoby]':'population' })
 
+	# somoe of the districts dont have "Powiat" in name so this loop add this word
 	for i, p in enumerate(pop['district']):
 		if p.split(' ')[0] != 'powiat':
 			
 			pop.at[i,'district'] = 'powiat ' + p
 
+	# change data type and add some extra columns
 	df = data
 	df = df[df['price'] != 'Zapytajocenę']
 	df = df.reset_index()
@@ -49,6 +56,7 @@ def add_pop_data(data):
 	df['population'] = 0
 	df['area of district'] = 0
 
+	# add values with population and area of districts
 	for i, dis in enumerate(df['district']):
 
 		if pop[pop['district'] == dis].empty == False:
@@ -60,7 +68,11 @@ def add_pop_data(data):
 
 	return df
 
-		
+
+# Now i don't use this function
+# It make request for every single advertisment to scrap more accurate data 
+# for exaple number of rooms, floor, year of build
+# It's over 100 000 request so it takes some time 		
 def find_data(*args):
 	for arg in args:
 
@@ -119,6 +131,9 @@ def find_data(*args):
 				elif 'Liczba pięter' in temp == False:
 					arg.at[index,'number of floors'] = 0
 
+
+# It add district to each location
+# I have to make an improvement of this because of a lot of time needed to done
 def add_district(df):
 	temp =[]
 	for city in df['localization']:
@@ -151,16 +166,16 @@ def add_district(df):
 
 if __name__ == '__main__':
 
-	# url1 = 'https://www.otodom.pl/wynajem/'
-	# url2 = 'https://www.otodom.pl/sprzedaz/'
-	# headers = {"User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
-	# (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
+	url1 = 'https://www.otodom.pl/wynajem/'
+	url2 = 'https://www.otodom.pl/sprzedaz/'
+	headers = {"User-Agent": 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 \
+	(KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'}
 
-	# scraper1 = Scraper(url1, headers)
-	# scraper2 = Scraper(url2, headers)
-	# j = Json_file()
-	# j.save("otodom_rent_data", scraper1.apartments_list)
-	# j.save("otodom_sale_data", scraper2.apartments_list)
+	scraper1 = Scraper(url1, headers)
+	scraper2 = Scraper(url2, headers)
+	j = Json_file()
+	j.save("otodom_rent_data", scraper1.apartments_list)
+	j.save("otodom_sale_data", scraper2.apartments_list)
 
 	add_column(df1,df2)
 	# find_data(df1,df2)
